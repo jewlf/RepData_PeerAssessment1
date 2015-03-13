@@ -10,10 +10,10 @@ output:
 
 # Read data from the supplied ZIP file
 data <- read.csv(unz("activity.zip","activity.csv"))
-#summary(data) # Debug checks still included during development
-#str(data)
-#head(data)
-#data[1:800,]
+#summary(data)  # Debug checks still included during development
+#str(data)      # Debugging code
+#head(data)     # Debugging code
+#data[1:800,]   # Debugging code
 
 # Process/transform the data
 
