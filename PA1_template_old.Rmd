@@ -1,0 +1,212 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+
+# Read data from the supplied ZIP file
+data <- read.csv(unz("activity.zip","activity.csv"))
+#summary(data)
+#str(data)
+
+
+## What is mean total number of steps taken per day?
+
+# Calculate the total number of steps taken per day
+totals_by_day <- aggregate(data$steps, list(data$date), sum)
+
+# Set meaningful column names
+colnames(totals_by_day) <- c("date", "sum")
+#head(totals_by_day)
+#summary(totals_by_day)
+#totals_by_day
+
+# Make a histogram of the total number of steps taken each day
+par(lab=c(15,5,7),
+    las=3,
+    cex.axis=0.7)
+    
+hist(totals_by_day$sum,
+     breaks=30,
+     col = "dodgerblue",
+     main = "Daily Step Totals Histogram",
+     xlab="Daily Step Totals",
+     ylab="Number of Days")
+
+# Calculate the mean of the total number of steps per day
+mean_total_steps_per_day <- mean(totals_by_day$sum, na.rm=TRUE)
+mean_total_steps_per_day
+
+# Calculate the median of the total number of steps per day
+median_total_steps_per_day <- median(totals_by_day$sum, na.rm=TRUE)
+median_total_steps_per_day
+
+
+
+
+
+## What is the average daily activity pattern?
+
+# Calculate the average number of steps in each interval
+average_by_interval <- aggregate(data$steps, list(data$interval), mean, na.rm=TRUE)
+
+dog <-sprintf("%04d", average_by_interval$interval)
+?strptime(dog, format="%H%M")
+
+
+sprintf("%02d:%02d", average_by_interval$interval %/% 100, average_by_interval$interval %% 100)
+
+strsplit(as.character(average_by_interval$interval), "%02d%02d")
+str(average_by_interval)
+
+# Set meaningful column names
+colnames(average_by_interval) <- c("interval", "average")
+#head(average_by_interval)
+#summary(average_by_interval)
+#average_by_interval
+
+par(lab=c(20,5,7),
+    las=3,
+    cex.axis=0.7)
+    
+plot(average_by_interval$interval, average_by_interval$average,
+     type = "l",
+     col = "dodgerblue",
+     main = "Average Daily Activity Pattern",
+     xlab="Intervals",
+     ylab="Activity (average number of steps)")
+
+
+# Find which row index contains the largest average value
+largest_avg_index <- which.max(average_by_interval$average)
+
+# Use that index to find the associated interval
+largest_avg_interval <- average_by_interval[largest_avg_index,]$interval
+largest_avg_interval
+
+
+
+
+## Imputing missing values
+
+# Find how many rows in the orignal dataset had an NA for steps
+total_missing_values <- sum(is.na(data$steps))
+total_missing_values
+
+# It appears that all NAs occur for an entire day at a time
+#data[is.na(data$steps), ]
+
+# To help preserve the daily activity pattern,  we'll use an 
+# imputing strategy where the NA step values are replaced
+# by the average value for that interval, rather than using
+# daily averages.
+#
+# Table "average_by_interval" can be used as the source for
+# replacement values
+
+# Make a copy of the original dataset
+data_filled <- data
+#data_filled[1:288,]
+#average_by_interval
+
+# Fill the step NAs with corresponding interval averages
+
+# Find indexes of the steps that are NA
+na_steps <- which(is.na(data_filled$steps))
+#na_steps
+
+# Get the intervals of those steps
+na_interval <- data_filled$interval[na_steps]
+#na_interval
+
+# For the indexed NA steps, replace with matched intervals
+data_filled$steps[na_steps] <- average_by_interval$average[match(na_interval, average_by_interval$interval)]
+
+# Check for any remaining NAs
+#data_filled[is.na(data_filled$steps), ]
+#data_filled$steps[na_steps]
+
+## What is mean total number of steps taken per day?
+
+# Calculate the total number of steps for each day based on the filled data
+totals_by_day_filled <- aggregate(data_filled$steps, list(data_filled$date), sum)
+
+# Set meaningful column names
+colnames(totals_by_day_filled) <- c("date", "sum")
+#head(totals_by_day_filled)
+#summary(totals_by_day_filled)
+#totals_by_day_filled
+
+
+# Histogram of the filled table
+par(lab=c(15,5,7),
+    las=3,
+    cex.axis=0.7)
+    
+hist(totals_by_day_filled$sum,
+     breaks=30,
+     col = "dodgerblue",
+     main = "Daily Step Totals Histogram (filled)",
+     xlab="Daily Step Totals",
+     ylab="Number of Days")
+     
+     
+# Calculate the filled mean of the total number of steps per day
+mean_total_steps_per_day_filled <- mean(totals_by_day_filled$sum, na.rm=TRUE)
+mean_total_steps_per_day_filled
+
+# Calculate the filled median of the total number of steps per day
+median_total_steps_per_day_filled <- median(totals_by_day_filled$sum, na.rm=TRUE)
+median_total_steps_per_day_filled
+
+# Compare the means and medians for original and filled data sets
+
+Original mean: mean_total_steps_per_day
+Filled mean: mean_total_steps_per_day_filled
+
+# Means are the same
+
+Original median: median_total_steps_per_day
+Filled median: median_total_steps_per_day_filled
+
+# Medians differ slightly
+
+# The imputing strategy of replacing the NA step values
+# with the average value for the corresponding interval seems to not skew
+# the mean and median significantly.
+
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+# Create a day column of type factor, indicating weekend or weekday
+
+totals_by_day_filled$day <-
+   as.factor(
+      ifelse(
+         weekdays(as.Date(totals_by_day_filled$date)) %in% c("Saturday", "Sunday"),
+         "weekend",
+         "weekday"
+      )
+   )
+
+
+#str(totals_by_day_filled)
+
+par(lab=c(20,5,7),
+    las=3,
+    cex.axis=0.7)
+    
+plot(average_by_interval$interval, average_by_interval$average,
+     type = "l",
+     col = "dodgerblue",
+     main = "Average Daily Activity Pattern",
+     xlab="Intervals",
+     ylab="Activity (average number of steps)")
+
+
