@@ -5,21 +5,28 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
 
-# Read data from the supplied ZIP file
+### 1.  Load the data
+
+The data is supplied in a ZIP file, which R can read directly:
+
+```{r loading,echo=TRUE}
 data <- read.csv(unz("activity.zip","activity.csv"))
-#summary(data)  # Debug checks still included during development
-#str(data)      # Debugging code
-#head(data)     # Debugging code
-#data[1:800,]   # Debugging code
+```
 
-# Process/transform the data
+Let's take a look at what the raw data looks like:
 
-# So that the plots with time intervals on the x-axis will be linear,
-# build a new column containing the HHMM interval converted to decimal hours
+```{r,echo=TRUE}
+head(data)
+```
 
+
+### 2.  Process/transform the data
+
+So that the x-axis time intervals will be linear, build a new column containing the HHMM interval converted to decimal hours:
+
+```{r,echo=TRUE}
 # Left pad the intervals with zeros to be a uniform four characters wide
 padded_intervals <- sprintf("%04d", data$interval)
 
@@ -31,107 +38,131 @@ decimal_mins <- as.numeric(substr(padded_intervals, 3,4)) / 60
 
 # Add hours and decimal minutes together to get decimal intervals
 decimal_interval <- decimal_hours + decimal_mins
-#decimal_interval[1:400]
-#str(decimal_interval)
 
 # Save the decimal intervals into a new column in the data set
 data$decimal_interval <- decimal_interval
-#data[1:400,]
-#str(data)
+```
 
+Let's take a look at what the processed data looks like:
+
+```{r,echo=TRUE}
+head(data)
+```
 
 ## What is mean total number of steps taken per day?
 
-# Calculate the total number of steps taken per day
+### 1.  Calculate the total number of steps taken per day
+
+As instructed, we're ignoring the missing values in the dataset.
+
+```{r,echo=TRUE}
 totals_by_day <- aggregate(data$steps, list(data$date), sum)
 
 # Set meaningful column names
 colnames(totals_by_day) <- c("date", "sum")
-#head(totals_by_day)
-#summary(totals_by_day)
-#totals_by_day
+```
 
-# Make a histogram of the total number of steps taken each day
+Let's take a look at what the processed data looks like:
+
+```{r,echo=TRUE}
+head(totals_by_day)
+```
+
+
+### 2.  Make a histogram of the total number of steps taken each day
+
+Set up the plotting parameters:
+
+```{r,echo=TRUE}
 par(lab=c(15,5,7),
     las=3,
     cex.axis=0.7)
+```
     
+Make the histrogram of the total number of steps taken each day:
+
+```{r histo1,fig.height=4,echo=TRUE}
 hist(totals_by_day$sum,
      breaks=10,
      col = "dodgerblue",
-     main = "Daily Step Totals Histogram",
+     main = "Histogram: Total Number of Steps Taken Each Day",
      xlab="Daily Step Totals",
      ylab="Number of Days")
+```
+     
+### 3.  Calculate and report mean and median of total steps taken per day
 
-# Calculate the mean of the total number of steps per day
-mean_total_steps_per_day <- mean(totals_by_day$sum, na.rm=TRUE)
-mean_total_steps_per_day
+Calculate the mean and median total number of steps per day:
+
+```{r,echo=TRUE}
+mean_total_steps_per_day <- sprintf("%f",mean(totals_by_day$sum, na.rm=TRUE))
 
 # Calculate the median of the total number of steps per day
-median_total_steps_per_day <- median(totals_by_day$sum, na.rm=TRUE)
-median_total_steps_per_day
+median_total_steps_per_day <- sprintf("%f",median(totals_by_day$sum, na.rm=TRUE))
+```
+
+
+####Mean number of steps taken each day: **`r mean_total_steps_per_day`**  
+####Median number of steps taken each day: **`r median_total_steps_per_day`**
 
 
 
 ## What is the average daily activity pattern?
 
-# Calculate the average number of steps in each 5-minute interval
-#average_by_interval <- aggregate(data$steps, list(data$interval), mean, na.rm=TRUE)
-average_by_interval <- aggregate(data$steps, list(data$decimal_interval), mean, na.rm=TRUE)
+### 1.  Make a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-#average_by_interval
+Calculate the average number of steps in each 5-minute interval:
+
+```{r,echo=TRUE}
+average_by_interval <- aggregate(data$steps, list(data$decimal_interval), mean, na.rm=TRUE)
 
 # Set meaningful column names
 colnames(average_by_interval) <- c("decimal_interval", "average")
-#head(average_by_interval)
-#summary(average_by_interval)
-#average_by_interval
-#str(average_by_interval)
+```
 
+Take a look at the results:
 
-# For reference, add on a column containing the original 5-minute intervals
+```{r,echo=TRUE}
+head(average_by_interval)
+```
+
+For reference, add a column containing the original 5-minute intervals:
+
+```{r,echo=TRUE}
 # Pick off the hours portion
 hours <- as.character(as.integer(average_by_interval$decimal_interval))
 
 # Pick off the minutes decimal fraction and multiple by 60 to convert to minutes
 minutes <- as.character(round(average_by_interval$decimal_interval%%1 * 60), digits=0)
-#minutes
 
 # Left pad the minutes string with zero to be two characters wide
 minutes <- paste("00", minutes, sep="")
 minutes <- substr(minutes, nchar(minutes)-2+1, nchar(minutes))
-#minutes
-
-#orig_interval <- as.integer(paste(hours, minutes, sep=""))
 
 # Create column to contain the character interval
-#average_by_interval$interval <- paste(hours, minutes, sep="")
-
 average_by_interval$interval <- as.integer(paste(hours, minutes, sep=""))
+```
 
+Take a look at the results:
 
-### Attempt a time column ###
-# Left pad the hours string with zero to be two characters wide
-#hours <- paste("00", hours, sep="")
-#hours <- substr(hours, nchar(hours)-2+1, nchar(hours))
-#hours
-#dt <- paste(hours,minutes,sep=":")
-#average_by_interval$datetime <- as.POSIXlt(dt, format="%H:%M")
-#str(average_by_interval)
-#average_by_interval
+```{r,echo=TRUE}
+head(average_by_interval)
+```
 
-
-
-# Set plotting parameters
+Set plotting parameters
+```{r,echo=TRUE}
 par(lab=c(10,5,50),
     las=2,             # Make labels perpendicular to axis
     cex.axis=0.7)      # Axis labels magnification
+```
 
-# Generate plot
+Generate the plot:
+
+```{r,echo=TRUE}
 plot(average_by_interval$decimal_interval, average_by_interval$average,
      type = "l",
      col = "dodgerblue",
-     main = "Average Daily Activity Pattern",
+     main = "Time Series Plot: Average Number of Steps by 5-min Interval",
      xlab="Hour Intervals",
      ylab="Activity (average number of steps)",
      xaxt="n")
@@ -141,142 +172,146 @@ hour_labels <- paste("0",as.character(c(1:24)), sep="")
 hour_labels <- substr(hour_labels, nchar(hour_labels)-2+1, nchar(hour_labels))
 hour_labels = paste(hour_labels, "00", sep="")
 
-# Apply custom xasis labels
+# Apply custom x asis labels
 axis(1, 1:24, hour_labels)
-
 
 # Find which row index contains the largest average value
 largest_avg_index <- which.max(average_by_interval$average)
 
-# Use that index to find the associated interval
-# decimal value first or adding an accurate line
+# Use that index to find associated decimal interval for an accurate line
 largest_avg_decimal_interval <- average_by_interval[largest_avg_index,]$decimal_interval
-largest_avg_decimal_interval
 
-# then text interval for labeling the line
+# Then get the text interval for labeling the line
 largest_avg_interval <- average_by_interval[largest_avg_index,]$interval
-largest_avg_interval
 
+# And save the steps to a variable for tagging the line
 largest_avg_steps <- round(average_by_interval[largest_avg_index,]$average, digits=1)
-largest_avg_steps
 
-
-# Draw red line at the max steps
+# Draw a red line at the max steps
 abline(v=largest_avg_decimal_interval, col="red")
 
-# Add max steps value near max point
+# Add the max steps value near max point
 text(largest_avg_decimal_interval, largest_avg_steps, largest_avg_steps , col="red", cex=0.7, pos=4)
 
 # Add interval name near base of red line
 text(largest_avg_decimal_interval, 0, largest_avg_interval , col="red", cex=0.7, pos=4, srt=90)
+```
+
+
+### 2.  Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+####5-minute interval that, on average, contains the maximum number of steps: **`r largest_avg_interval`**.
 
 
 
 ## Imputing missing values
 
-# Find how many rows in the orignal dataset had an NA for steps
+### 1.  Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+Find how many rows in the orignal dataset had an NA for steps:
+
+```{r,echo=TRUE}
 total_missing_values <- sum(is.na(data$steps))
-total_missing_values
+```
 
-# It appears that all NAs occur for an entire day at a time
-#data[is.na(data$steps), ]
+####The number of missing values is **`r total_missing_values`**.
 
-# We'll use an imputing strategy where the NA step values are
-# replaced by the mean value for that interval
-#
-# Table "average_by_interval" can be used as the source for
-# replacement values
 
-# Make a copy of the original dataset
+### 2.  Devise a strategy for filling in all of the missing values in the dataset.
+
+It appears that all NAs occur for an entire day at a time.
+
+We'll use an imputing strategy where the NA step values are replaced by the mean value for that interval.  Table "average_by_interval" can be used as the source for replacement values.
+
+### 3.  Create a new dataset that is equal to the original dataset but with the missing data filled in
+
+Make a copy of the original dataset to use for filling:
+
+```{r,echo=TRUE}
 data_filled <- data
-#data_filled[1:288,]
-#str(average_by_interval)
-#str(data)
+```
 
-# Fill the step NAs with corresponding interval averages
+Fill the step NAs with corresponding interval averages:
 
+```{r,echo=TRUE}
 # Find indexes of the steps that are NA
 na_steps <- which(is.na(data_filled$steps))
-#na_steps
 
 # Get the intervals of those steps
 na_interval <- data_filled$interval[na_steps]
-#na_interval
 
 # For the indexed NA steps, replace with matched intervals
 data_filled$steps[na_steps] <- average_by_interval$average[match(na_interval, average_by_interval$interval)]
-data_filled[1:288,]
+```
 
-# Check for any remaining NAs
-#data_filled[is.na(data_filled$steps), ]
-#data_filled$steps[na_steps]
-
-
+### 4.  Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 ## What is mean total number of steps taken per day?
 
-# Calculate the total number of steps for each day based on the filled data
+Calculate the total number of steps for each day based on the filled data:
+
+```{r,echo=TRUE}
 totals_by_day_filled <- aggregate(data_filled$steps, list(data_filled$date), sum)
 
-# Set meaningful column names
+# Set meaningful column names:
 colnames(totals_by_day_filled) <- c("date", "sum")
-#head(totals_by_day_filled)
-#summary(totals_by_day_filled)
-#totals_by_day_filled
-#str(totals_by_day_filled)
+```
 
+Set plotting parameters:
 
-# Histogram of the filled table
+```{r,echo=TRUE}
 par(lab=c(15,5,7),
     las=3,
     cex.axis=0.7)
-    
+```
+
+Histogram of the filled table:
+
+```{r histo2,fig.height=4,echo=TRUE}
 hist(totals_by_day_filled$sum,
      breaks=10,
      col = "dodgerblue",
-     main = "Daily Step Totals Histogram (filled)",
+     main = "Histogram: Total Number of Steps Taken Each Day after Imputing",
      xlab="Daily Step Totals",
      ylab="Number of Days")
+```
      
-     
-# Calculate the filled mean of the total number of steps per day
-mean_total_steps_per_day_filled <- mean(totals_by_day_filled$sum, na.rm=TRUE)
-mean_total_steps_per_day_filled
+```{r,echo=TRUE}
+# Calculate the filled mean  and medial of total number steps per day
+mean_total_steps_per_day_filled <- sprintf("%f",mean(totals_by_day_filled$sum, na.rm=TRUE))
 
-# Calculate the filled median of the total number of steps per day
-median_total_steps_per_day_filled <- median(totals_by_day_filled$sum, na.rm=TRUE)
-median_total_steps_per_day_filled
+median_total_steps_per_day_filled <- sprintf("%f",median(totals_by_day_filled$sum, na.rm=TRUE))
+```
 
-# Compare the means and medians for original and filled data sets
+Comparing the means for original and filled data sets:
 
-Original mean: mean_total_steps_per_day
-Filled mean: mean_total_steps_per_day_filled
+####Original mean: **`r mean_total_steps_per_day`**  
+####Filled mean: **`r mean_total_steps_per_day_filled`**
 
-# Means are the same
+The Means are the same.
 
-Original median: median_total_steps_per_day
-Filled median: median_total_steps_per_day_filled
+Comparing the medians for original and filled data sets:
 
-# Medians differ slightly
+####Original median: **`r median_total_steps_per_day`**  
+####Filled median: **`r median_total_steps_per_day_filled`**
 
-# The imputing strategy of replacing the NA step values
-# with the average value for the corresponding interval seems to not skew
-# the mean and median significantly.
+The Medians differ slightly, but are very close together.  The imputing strategy  for filling NAs appears to not have skewed the mean and median significantly.
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-# Create a day column of type factor, indicating weekend or weekday
+### 1.  Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day
 
+Starting with thia dataset that has the NAs filled:
 
+```{r,echo=TRUE}
+head(data_filled)
+```
 
-# Starting with the dataset that has the NAs filled,
-# add a factor column containing the day of the week
+Add a "day" factor column containing the weekday/weekend indicator:
 
-#data_filled[1:200,]
-
-
+```{r,echo=TRUE}
 data_filled$day <-
    as.factor(
       ifelse(
@@ -285,40 +320,41 @@ data_filled$day <-
          "weekday"
       )
    )
-   
-#data_filled[1:400,]
-#str(data_filled)
+```
 
-# Using a similar procedure to the above, but separating out weekdays and weekends
+Take a look at the results:
+  
+```{r,echo=TRUE}
+head(data_filled)
+```
 
+Separate out the weekdays and weekends into to tables.  I know there are shorter ways but this step-by-step method gets the job done and gives me more practice:
+
+```{r,echo=TRUE}
 # Subset out datasets for weekdays and weekends
 data_filled_wd <-subset(data_filled, day == "weekday")
 data_filled_we <-subset(data_filled, day == "weekend")
+```
 
-# Calculate the average number of steps in each 5-minute interval
-# into two separate tables one for weekday and one for weekend
-#average_by_interval <- aggregate(data$steps, list(data$interval), mean, na.rm=TRUE)
-average_by_interval_wd <- aggregate(data_filled_wd$steps, list(data_filled_wd$decimal_interval), mean, na.rm=TRUE)
+Calculate the average number of steps in each 5-minute interval into two separate tables one for weekday and one for weekend:
 
-average_by_interval_we <- aggregate(data_filled_we$steps, list(data_filled_we$decimal_interval), mean, na.rm=TRUE)
+```{r,echo=TRUE}
+average_by_interval_wd <- aggregate(data_filled_wd$steps,
+                                    list(data_filled_wd$decimal_interval), mean, na.rm=TRUE)
 
-#average_by_interval_wd
-#str(average_by_interval_wd)
-#average_by_interval_we
-#str(average_by_interval_we)
+average_by_interval_we <- aggregate(data_filled_we$steps,
+                                    list(data_filled_we$decimal_interval), mean, na.rm=TRUE)
 
 # Set meaningful column names
 colnames(average_by_interval_wd) <- c("decimal_interval", "average")
 colnames(average_by_interval_we) <- c("decimal_interval", "average")
-#head(average_by_interval)
-#summary(average_by_interval)
-#average_by_interval
-#str(average_by_interval)
+```
 
+For reference, add on a column  to each, containing the original 5-minute intervals:
 
-# For reference, add on a column containing the original 5-minute intervals
+Do the weekday dataset first:
 
-# Do the weekday dataset first
+```{r,echo=TRUE}
 # Pick off the hours portion
 hours <- as.character(as.integer(average_by_interval_wd$decimal_interval))
 
@@ -334,12 +370,11 @@ average_by_interval_wd$interval <- as.integer(paste(hours, minutes, sep=""))
 
 # Create column for day, in preparation of combining
 average_by_interval_wd$day <- c("weekday")
+```
 
-#str(average_by_interval_wd)
-#average_by_interval_wd
+Then do the weekend dataset:
 
-
-# Then do the weekend dataset
+```{r,echo=TRUE}
 # Pick off the hours portion
 hours <- as.character(as.integer(average_by_interval_we$decimal_interval))
 
@@ -355,36 +390,45 @@ average_by_interval_we$interval <- as.integer(paste(hours, minutes, sep=""))
 
 # Create column for day, in preparation of combining
 average_by_interval_we$day <- c("weekend")
+```
 
-#str(average_by_interval_we)
-#average_by_interval_we
+Then, combine into one convenient table for use by ggplot2:
 
-# Combine into one conveinent table for use by ggplot2
+```{r,echo=TRUE}
 average_by_interval_w <- rbind(average_by_interval_we, average_by_interval_wd)
+```
 
 
+### 2.  Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
 
-# Now ready to plot the two
-# Load ggplot2
-install.packages("ggplot2")       # Needed the first time
+Create base plot:
+
+```{r,echo=TRUE}
+#install.packages("ggplot2")       # Needed the first time
 library(ggplot2)
-
-# Create base
 q <- ggplot(average_by_interval_w, aes(decimal_interval, average))
+```
 
-#Build up the plot by adding layers
-# NOTE: the + must be on the end of preceeding lines
+Build up the plot by adding layers:
+
+```{r,echo=TRUE}
 p <- q + geom_line(colour = "blue") +
+  ggtitle("Panel Plot: comparing averages across weekdays and weekends") +
   facet_wrap(~ day, ncol=1, as.table = FALSE) +
   theme(strip.text.x = element_text(size=12),
         panel.background = element_rect(fill = "white"),
-        strip.background = element_rect(colour="black", fill = "antiquewhite")) +
+        strip.background = element_rect(colour="black", fill = "antiquewhite"),
+        plot.title = element_text(lineheight=2.0, face="bold")) +
         ylab("Number of Steps") +
         xlab("Interval") +
         scale_x_continuous(breaks=c(0, 5, 10, 15, 20, 24),
                            labels=c("0", "500", "1000", "1500", "2000", "2400"))
+```
                            
+Generate plot:
 
-# Generate plot
+```{r,echo=TRUE}
 print(p)
+```
 
+It looks like there's a weekday peak as people travel to work.  But on weekends, they're a little less active at the 8:25am interval but remain more active during the weekend days.
