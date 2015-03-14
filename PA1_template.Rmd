@@ -158,7 +158,7 @@ par(lab=c(10,5,50),
 
 Generate the plot:
 
-```{r,echo=TRUE}
+```{r,tseries,echo=TRUE}
 plot(average_by_interval$decimal_interval, average_by_interval$average,
      type = "l",
      col = "dodgerblue",
@@ -427,7 +427,7 @@ p <- q + geom_line(colour = "blue") +
                            
 Generate plot:
 
-```{r,echo=TRUE}
+```{r,panelplot,echo=TRUE}
 print(p)
 ```
 
