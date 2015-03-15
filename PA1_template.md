@@ -253,10 +253,12 @@ largest_avg_steps <- round(average_by_interval[largest_avg_index,]$average, digi
 abline(v=largest_avg_decimal_interval, col="red")
 
 # Add the max steps value near max point
-text(largest_avg_decimal_interval, largest_avg_steps, largest_avg_steps , col="red", cex=0.7, pos=4)
+text(largest_avg_decimal_interval, largest_avg_steps, largest_avg_steps , col="red",
+     cex=0.7, pos=4)
 
 # Add interval name near base of red line
-text(largest_avg_decimal_interval, 0, largest_avg_interval , col="red", cex=0.7, pos=4, srt=90)
+text(largest_avg_decimal_interval, 0, largest_avg_interval , col="red", cex=0.7,
+     pos=4, srt=90)
 ```
 
 ![](PA1_template_files/figure-html/tseries-1.png) 
@@ -308,7 +310,8 @@ na_steps <- which(is.na(data_filled$steps))
 na_interval <- data_filled$interval[na_steps]
 
 # For the indexed NA steps, replace with matched intervals
-data_filled$steps[na_steps] <- average_by_interval$average[match(na_interval, average_by_interval$interval)]
+data_filled$steps[na_steps] <- average_by_interval$average[match(na_interval,
+                                  average_by_interval$interval)]
 ```
 
 ### 4.  Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
